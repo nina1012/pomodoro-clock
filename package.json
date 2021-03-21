@@ -1,0 +1,22 @@
+{
+  "name": "y",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "compile:sass": "node-sass sass/main.scss css/styles.css -w"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nina1012/pomodoro-clock.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nina1012/pomodoro-clock/issues"
+  },
+  "homepage": "https://github.com/nina1012/pomodoro-clock#readme",
+  "devDependencies": {
+    "node-sass": "^5.0.0"
+  }
+}
