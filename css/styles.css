@@ -15,14 +15,11 @@ body {
   display: flex;
   justify-content: center;
   height: 100vh;
-  text-align: center;
-  background-color: black;
-  color: white; }
+  text-align: center; }
 
 .container {
   height: 30rem;
-  width: 70rem;
-  border: 3px solid red; }
+  width: 70rem; }
   .container h1 {
     font-size: 3rem;
     margin: 3rem 0; }
