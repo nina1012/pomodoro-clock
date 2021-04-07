@@ -1,49 +1,51 @@
-/////////////////////////////////////
 // DOM ELEMENTS
 const sessionLength = document.getElementById('session-length');
 const breakLength = document.getElementById('break-length');
 const startStopButton = document.getElementById('start_stop');
 const resetButton = document.getElementById('reset');
-const timeLeftDisplay = document.getElementById('time-left');
+const timeLeft = document.getElementById('time-left');
 const timerLabel = document.getElementById('timer-label');
 const audio = document.querySelector('audio');
 
 // VARIABLES
 let countdown;
 let isPaused = true;
-const state = {
-  sessionMinutes: 25,
-  breakMinutes: 5
-};
+let sessionMinutes = 25;
+let breakMinutes = 5;
+let resumeTime;
+timeLeft.textContent = `${sessionMinutes}:00`;
 
 // FUNCTIONS
 
+// initial settings
 const init = () => {
-  state.sessionMinutes = 25;
-  state.breakMinutes = 5;
-  sessionLength.textContent = state.sessionMinutes;
-  breakLength.textContent = state.breakMinutes;
+  sessionMinutes = 25;
+  breakMinutes = 5;
+  sessionLength.textContent = sessionMinutes;
+  breakLength.textContent = breakMinutes;
   timerLabel.textContent = 'Session';
-  timeLeftDisplay.textContent = displayTimeLeft(state.sessionMinutes * 60);
+  timeLeft.textContent = `${sessionMinutes}:00`;
+  isPaused = true;
+  audio.currentTime = 0;
+  resumeTime = null;
 };
 
+// change the length session or break with - and +
 const updateTimeLengths = (label, operator) => {
   if (label === 'break') {
     if (operator === '+') {
-      state.breakMinutes < 60 ? (state.breakMinutes += 1) : state.breakMinutes;
+      breakMinutes < 60 ? (breakMinutes += 1) : breakMinutes;
     } else if (operator === '-') {
-      state.breakMinutes > 1 ? (state.breakMinutes -= 1) : state.breakMinutes;
+      breakMinutes > 1 ? (breakMinutes -= 1) : breakMinutes;
     }
+    timeLeft.textContent = `${breakMinutes}:00`;
   } else {
     if (operator === '+') {
-      state.sessionMinutes < 60
-        ? (state.sessionMinutes += 1)
-        : state.sessionMinutes;
+      sessionMinutes < 60 ? (sessionMinutes += 1) : sessionMinutes;
     } else {
-      state.sessionMinutes > 1
-        ? (state.sessionMinutes -= 1)
-        : state.sessionMinutes;
+      sessionMinutes > 1 ? (sessionMinutes -= 1) : sessionMinutes;
     }
+    timeLeft.textContent = `${sessionMinutes}:00`;
   }
 };
 
@@ -55,10 +57,17 @@ const displayTimeLeft = time => {
   return `${formatTime(minutes)}:${formatTime(seconds)}`;
 };
 
+// resume timer from where it was stopped
+const resume = (min, sec) => {
+  min = +min;
+  sec = +sec;
+  timer(min * 60 + sec);
+};
+
 const timer = sec => {
   clearInterval(countdown);
   // called not to wait 1s to invoke setInterval
-  timeLeftDisplay.textContent = displayTimeLeft(sec);
+  timeLeft.textContent = displayTimeLeft(sec);
 
   const now = Date.now();
   const past = now + sec * 1000;
@@ -66,38 +75,25 @@ const timer = sec => {
   countdown = setInterval(() => {
     const secLeft = Math.round((past - Date.now()) / 1000);
 
-    if (secLeft <= 0) {
+    if (secLeft === 0) {
       clearInterval(countdown);
       audio.currentTime = 0;
       audio.play();
+
+      // when timer reaches 00:00, swap labels
+      if (timerLabel.textContent === 'Session') {
+        timerLabel.textContent = 'Break';
+        timer(breakMinutes * 60);
+      } else {
+        timerLabel.textContent = 'Session';
+        timer(sessionMinutes * 60);
+      }
     }
-    timeLeftDisplay.textContent = displayTimeLeft(secLeft);
-    // if (timeLeftDisplay.textContent === "00:00") {
-    //   audio.currentTime = 0;
-    //   audio.play();
-    // }
+    timeLeft.textContent = displayTimeLeft(secLeft);
   }, 1000);
 };
 
-// EVENT LISTENERS
-
-document.addEventListener('click', e => {
-  if (!e.target.dataset.change) return;
-
-  const label = e.target.id.split('-')[0];
-  const operator = e.target.dataset.change;
-
-  updateTimeLengths(label, operator);
-  sessionLength.textContent = state.sessionMinutes;
-  breakLength.textContent = state.breakMinutes;
-});
-
-startStopButton.addEventListener('click', () => {
-  isPaused = !isPaused;
-  timer(state.sessionMinutes * 60);
-});
-
-resetButton.addEventListener('click', () => {
+const reset = () => {
   // stop the timer
   clearInterval(countdown);
   // give break-length,session-length and time-left default values
@@ -105,4 +101,37 @@ resetButton.addEventListener('click', () => {
   // play audio
   audio.currentTime = 0;
   audio.pause();
+  timerLabel.textContent = 'Session';
+  resumeTime = null;
+};
+// EVENT LISTENERS
+
+//  buttons for chaning lengths of session or break
+document.addEventListener('click', e => {
+  if (!e.target.dataset.change) return;
+
+  const label = e.target.id.split('-')[0];
+  const operator = e.target.dataset.change;
+  updateTimeLengths(label, operator);
+  sessionLength.textContent = sessionMinutes;
+  breakLength.textContent = breakMinutes;
 });
+
+startStopButton.addEventListener('click', () => {
+  // these keep track of paused timer
+  let min, sec;
+  isPaused = !isPaused;
+  if (!isPaused) {
+    timer(sessionMinutes * 60);
+  } else if (resumeTime && isPaused) {
+    resumeTime = timeLeft.textContent;
+    [min, sec] = resumeTime.split(':');
+    resume(min, sec);
+  } else if (isPaused) {
+    clearInterval(countdown);
+    resumeTime = timeLeft.textContent;
+    isPaused = false;
+  }
+});
+
+resetButton.addEventListener('click', reset);
